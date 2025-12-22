@@ -1,0 +1,190 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "arya-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -864,
+        -80
+      ],
+      "id": "259a6068-c310-408d-94c0-8e9d9808c6b7",
+      "name": "Webhook",
+      "webhookId": "fdbb5e79-a270-48e8-a25f-bca2c654cf1f"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"reply\": \"{{ $json.reply }}\"\n}\n\n",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        144,
+        -80
+      ],
+      "id": "e261d159-a347-4bfa-b43d-407e6247a301",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// return {\n//   json: {\n//     chatInput: $json.body.ping\n//   }\n// };\n// return {\n//   sessionId: $json.body.sessionId,\n//   chatInput: $json.body.ping\n// };\n\nconst data = $getWorkflowStaticData('global');\n\n\n\n\n// init memory\nif (!data.chatMemory) {\n  data.chatMemory = {};\n}\n\n// read from webhook BODY\nconst sessionId = $json.body.sessionId || 'default';\nconst userMessage = $json.body.userMessage;\n\n// SAFETY CHECK\nif (!userMessage) {\n  return {\n    error: 'No userMessage received',\n    sessionId\n  };\n}\n\n// init session\nif (!data.chatMemory[sessionId]) {\n  data.chatMemory[sessionId] = [];\n}\n\n// save user message\ndata.chatMemory[sessionId].push({\n  role: 'user',\n  content: userMessage\n});\n\n// 🔒 LIMIT MEMORY (keep last 10 messages)\nif (data.chatMemory[sessionId].length > 10) {\n  data.chatMemory[sessionId] = data.chatMemory[sessionId].slice(-10);\n}\n\n\n// build history text\nconst chatHistoryText = data.chatMemory[sessionId]\n  .map(m => `${m.role}: ${m.content}`)\n  .join('\\n');\n\nreturn {\n  sessionId,\n  userMessage,\n  chatHistoryText\n};\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -592,
+        -80
+      ],
+      "id": "97242c03-db9c-4687-92b9-7a300091837e",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatHistoryText }}\n\nUser: {{ $json.userMessage }}\nAssistant:",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "You are Ayra, or you can call me daughter of Rajeev😍 AI assistant with memory. Use conversation history to answer naturally."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -304,
+        -80
+      ],
+      "id": "cda9a2d3-24ab-4cba-b4b1-061f4b21f9b1",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -304,
+        96
+      ],
+      "id": "6608f2bf-8da3-4c33-9081-95b5de8f65f6",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "8ZLKk97ifSpVYiLM",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const data = $getWorkflowStaticData('global');\nconst sessionId = $json.sessionId || 'default';\n\n\nif (data.chatMemory && data.chatMemory[sessionId]) {\n  data.chatMemory[sessionId].push({\n    role: 'assistant',\n    content: $json.text\n  });\n}\n\nreturn {\n  reply: $json.text\n};\n\n\n// const data = $getWorkflowStaticData('global');\n\n// const sessionId = $json.sessionId;\n// const assistantReply = $json.text;\n\n// // Safety\n// if (!sessionId || !assistantReply) {\n//   return {\n//     reply: assistantReply || 'No reply generated'\n//   };\n// }\n\n// // Ensure memory exists\n// if (!data.chatMemory) data.chatMemory = {};\n// if (!data.chatMemory[sessionId]) data.chatMemory[sessionId] = [];\n\n// // Save assistant reply\n// data.chatMemory[sessionId].push({\n//   role: 'assistant',\n//   content: assistantReply\n// });\n\n// // Limit memory again (safety)\n// if (data.chatMemory[sessionId].length > 10) {\n//   data.chatMemory[sessionId] = data.chatMemory[sessionId].slice(-10);\n// }\n\n// // Send reply forward\n// return {\n//   reply: assistantReply\n// };\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -16,
+        -80
+      ],
+      "id": "3dc2a787-3268-41ad-824d-6478790bad0c",
+      "name": "Code in JavaScript1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "c52f6247-25c0-4563-86f5-c9871452f25f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "ea1ce2772780319443ab646e914f92f19d89ae86aa5bd590d449cc9cd576df16"
+  },
+  "id": "k4oaG0nYoAxdPJUR",
+  "tags": []
+}
