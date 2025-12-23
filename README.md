@@ -1,4 +1,5 @@
-# Ayra – AI Assistant 🤖
+# [Ayra – AI Assistant 🤖](https://www.example.com)
+
 
 Ayra is a web-based AI chat assistant built using:
 - HTML, CSS, JavaScript (frontend)
@@ -27,3 +28,4 @@ Ayra is a web-based AI chat assistant built using:
 
 ## Author
 Ayra AI Project
+[Visit my website](https://www.example.com)
