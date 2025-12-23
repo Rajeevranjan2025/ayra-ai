@@ -1,4 +1,4 @@
-# [Ayra – AI Assistant 🤖](https://www.ayra.ai.netlify.app)
+# [Ayra – AI Assistant 🤖](https://ayra-ai.netlify.app)
 
 
 Ayra is a web-based AI chat assistant built using:
@@ -28,4 +28,4 @@ Ayra is a web-based AI chat assistant built using:
 
 ## Author
 Ayra AI Project
-[Visit my website](https://www.ayra.ai.netlify.app)
+[Visit my website](https://ayra-ai.netlify.app)
